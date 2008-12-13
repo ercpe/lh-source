@@ -1,6 +1,6 @@
 #!/sbin/runscript
 
-SCRIPT="/root/bin/firewall/firewall.sh";
+SCRIPT="/usr/sbin/firewall.sh";
 
 depend() {
 	need net
