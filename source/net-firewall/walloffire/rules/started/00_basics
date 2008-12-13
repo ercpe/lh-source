@@ -1,0 +1,43 @@
+## flush chains
+${IPT} -F
+${IPT} -t nat -F
+${IPT} -t mangle -F
+${IPT} -X
+${IPT} -t nat -X
+${IPT} -t mangle -X
+
+## set the default policy
+${IPT} -P INPUT DROP;
+${IPT} -P OUTPUT DROP;
+${IPT} -P FORWARD DROP;
+
+## enable ip forwarding
+echo 1 > /proc/sys/net/ipv4/ip_forward
+
+
+## allow pings
+${IPT} -A INPUT -m state --state NEW -p icmp --icmp-type echo-request -j ACCEPT
+${IPT} -A OUTPUT -m state --state NEW -p icmp --icmp-type echo-request -j ACCEPT
+${IPT} -A FORWARD -m state --state NEW -p icmp --icmp-type echo-request -j ACCEPT
+
+
+## Accept already established connections
+${IPT} -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+${IPT} -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+${IPT} -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+
+# reject all invalid packets
+${IPT} -A INPUT -m state --state INVALID -m limit --limit $LOG_LIMIT -j LOG --log-prefix "FIREWALL (INVALID INPUT): "
+${IPT} -A INPUT -m state --state INVALID -j REJECT;
+
+${IPT} -A OUTPUT -m state --state INVALID -m limit --limit $LOG_LIMIT -j LOG --log-prefix "FIREWALL (INVALID OUTPUT): "
+${IPT} -A OUTPUT -m state --state INVALID -j REJECT;
+
+${IPT} -A FORWARD -m state --state INVALID -m limit --limit $LOG_LIMIT -j LOG --log-prefix "FIREWALL (INVALID FORWARD): "
+${IPT} -A FORWARD -m state --state INVALID -j REJECT;
+
+
+## Allow loopback communication
+${IPT} -A INPUT -i lo -j ACCEPT;
+${IPT} -A OUTPUT -o lo -j ACCEPT;

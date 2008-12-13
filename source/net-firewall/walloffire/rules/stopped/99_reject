@@ -1,0 +1,14 @@
+
+## REJECT all remaining packets (remember: default policy is DROP!!)
+${IPT} -A INPUT -m limit --limit $LOG_LIMIT -j LOG --log-prefix "FIREWALL (REJECTED IN): ";
+${IPT} -A INPUT -p tcp -j REJECT --reject-with tcp-reset;
+${IPT} -A INPUT -p udp -j REJECT --reject-with icmp-port-unreachable;
+
+${IPT} -A OUTPUT -m limit --limit $LOG_LIMIT -j LOG --log-prefix "FIREWALL (REJECTED OUT): "
+${IPT} -A OUTPUT -p tcp -j REJECT --reject-with tcp-reset;
+${IPT} -A OUTPUT -p udp -j REJECT --reject-with icmp-port-unreachable;
+
+${IPT} -A FORWARD -m limit --limit $LOG_LIMIT -j LOG --log-prefix "FIREWALL (REJECTED FWD): "
+${IPT} -A FORWARD -p tcp -j REJECT --reject-with tcp-reset;
+${IPT} -A FORWARD -p udp -j REJECT --reject-with icmp-port-unreachable;
+
