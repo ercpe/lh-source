@@ -11,11 +11,7 @@ case $1 in
    		if [[ `whoami` == root ]]; then
    			echo "Must be regular user to copy to clipboard.";
 		else
-			if [ `which xclip &> /dev/null`]; then
-				grep -vh '^[[:space:]]*\(#\|$\)' "$@" | xclip -selection c
-			else
-				echo "No xclip installed - emerge app-misc/stripcomments with the X flag";
-			fi
+			which xclip &> /dev/null && grep -vh '^[[:space:]]*\(#\|$\)' "$@" | xclip -selection c || echo "No xclip installed - emerge app-misc/stripcomments with the X flag";
 		fi
 		;;
 	* )
