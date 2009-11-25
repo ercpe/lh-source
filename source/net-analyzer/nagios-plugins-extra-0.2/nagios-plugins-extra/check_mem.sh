@@ -49,12 +49,12 @@ PERFDATA="total=$total;used=$real_used;free=$free;shared=$shared;buffers=$buffer
 free_percentage=$(((($real_free*100)/$total)))
 
 if [ "$free_percentage" -lt "$critical" ]; then
-    echo "Memory CRITCAL - $real_free MB free memory | $PERFDATA";
+    echo "Memory CRITCAL - $real_free MB free, $real_used MB used | $PERFDATA";
     exit $STATUS_CRITCAL;
 elif [ "$free_percentage" -lt "$warning" ]; then
-    echo "Memory WARNING - $real_free MB free memory | $PERFDATA";
+    echo "Memory WARNING - $real_free MB free, $real_used MB used | $PERFDATA";
     exit $STATUS_WARNING;
 else
-    echo "Memory OK - $real_free MB free memory | $PERFDATA";
+    echo "Memory OK - $real_free MB free, $real_used MB used | $PERFDATA";
     exit $STATUS_OK;
 fi
