@@ -1,0 +1,45 @@
+#!/usr/bin/perl -w
+use strict;
+
+sub emerge {
+        my $package = shift;
+#			print "${package}";
+           $_ = `emerge -pv "${package}" 2>&1`;
+
+#			print $_;
+
+           if(m/^- (\S+) \(masked by:.*package.mask/mi) {
+                   print "Unmasking ${1} in package.unmask\n";
+                   print UNMASK "=${1}\n";
+
+                   return 1;
+           }
+           if(m/^- (\S+) \(masked by:.*\s+(\S+)\s+keyword/mi) {
+                   print "Unmasking ${1} in package.keywords\n";
+                   print KEYWORDS "=${1} ${2}\n";
+                   return 1;
+           }
+			if(m/^Change USE:.*\s+(\S+)\s+/mi) {
+				print "Changing USE ${2} for ${1}";
+#				print USE "${1} ${2}";
+			}
+
+           if(m/^!!! masked or don't exist:\n(\S+)/mi) {
+                   while(emerge($1) != 0){}
+                   return 1;
+           }
+
+           	return 0;
+}
+
+open(UNMASK, ">>/etc/portage/package.unmask");
+open(KEYWORDS, ">>/etc/portage/package.keywords");
+open(USE, ">>/etc/portage/package.use");
+our $package = $ARGV[0];
+$package =~ s/"/\\"/g;
+while(emerge($package) != 0){}
+print "Done\n";
+close(UNMASK);
+close(KEYWORDS);
+close(USE);
+

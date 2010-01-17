@@ -1,0 +1,9 @@
+#!/bin/sh
+
+PKGLIST="linux-headers glibc binutils-config binutils gcc-config gcc glibc binutils gcc system world"
+
+for i in $PKGLIST
+do
+	emerge $i $* || exit 1
+done
+
