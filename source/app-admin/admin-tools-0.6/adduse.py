@@ -23,7 +23,9 @@ uses_re = re.compile("^\s*([\w_\-0-9\+]+/[\w_\-0-9\+]+) (.*)", re.IGNORECASE)
 split_re = re.compile("\s+", re.IGNORECASE)
 
 prefix_root = portage.settings['EPREFIX']
-PACKAGE_USE=os.path.join(prefix_root, "/etc/portage/package.use")
+if not prefix_root.strip():
+	prefix_root = "/"
+PACKAGE_USE=os.path.join(prefix_root, "etc/portage/package.use")
 
 def read_uses():
 	packages = {}
