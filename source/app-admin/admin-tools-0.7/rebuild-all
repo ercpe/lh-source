@@ -1,0 +1,77 @@
+#!/bin/bash
+
+source /usr/lib*/portage/bin/isolated-functions.sh
+
+PACKAGES="
+	sys-kernel/linux-headers
+	sys-libs/glibc
+	sys-libs/uclibc
+	sys-devel/gcc
+	sys-devel/binutils
+	dev-libs/ppl
+	dev-libs/cloog-ppl
+	dev-libs/gmp
+	dev-libs/mpfr
+	sys-libs/glibc
+	sys-libs/uclibc
+	sys-devel/gcc
+	sys-devel/binutils
+	sys-libs/glibc
+	sys-libs/uclibc
+	sys-devel/gcc
+	sys-devel/binutils
+	dev-libs/glib
+	dev-libs/klibc"
+
+if [[ $USER != root ]]; then
+	echo "Get the hell outta here!"
+	exit
+fi
+
+print_help() {
+	echo "rebuild-all [-i] [-m|--minimal] [-h|--help]"
+}
+
+until [ -z "$1" ]; do
+	case $1 in
+		-h | --help )
+			print_help
+			exit
+			;;
+		-i )
+			_opts="--ignore-default-opts"
+			;;
+		-m | --minimal )
+			_minimal="true"
+			;;
+		* )
+			print_help
+			exit
+			;;
+	esac
+	shift
+done
+
+_2emerge=""
+
+for _pack in ${PACKAGES}; do
+	eix -q -I ${_pack} && _2emerge="${_2emerge} ${_pack}"
+done
+
+[[ -f /var/log/rebuild.log ]] && mv /var/log/rebuild.log{,.old}
+
+einfo "This will be emerged ..."
+emerge -vpt ${_2emerge}
+
+for i in ${PACKAGES}; do
+	if eix -q -I ${i}; then
+		emerge --jobs=1 -1vt ${_opts} $i || exit
+		source /etc/profile
+		echo "$i done" >> /var/log/rebuild.log
+	fi
+done
+
+if [[ ${_minimal} != "true" ]]; then
+	emerge -1vt ${_opts} system
+	emerge -1vt ${_opts} world
+fi

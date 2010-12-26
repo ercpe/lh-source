@@ -1,0 +1,12 @@
+#!/bin/bash
+
+source /etc/make.conf
+
+NUMPROC=$(cat /proc/cpuinfo | grep processor | wc -l)
+
+for overlay in ${PORTDIR_OVERLAY}; do
+	echo "Creating metadata-cache for ${overlay} ..."
+	overlayname="$(head -1 ${overlay}/profiles/repo_name)"
+	egencache --jobs=${NUMPROC} --repo=${overlayname} --update
+	echo ""
+done
