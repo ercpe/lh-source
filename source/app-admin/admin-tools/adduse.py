@@ -6,7 +6,7 @@ Copyright Information
 2010 Johann Schmitz, Duesseldorf, Germany
 
 @author Johann Schmitz (johann@j-schmitz.net)
-@version $Id: adduse.py 1401 2010-11-12 18:53:35Z johann $
+@version $Id$
 
 Web:  www.j-schmitz.net
 Mail: johann@j-schmitz.net
