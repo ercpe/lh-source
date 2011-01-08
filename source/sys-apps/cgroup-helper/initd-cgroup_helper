@@ -25,7 +25,7 @@ start() {
     fi
 
     mkdir -m 0777 ${CGROUP_MOUNTPOINT}/user
-    /bin/echo ${CGROUP_CLEAN} >${CGROUP_MOUNTPOINT}/release_agent
+    /bin/echo ${CGROUP_CLEAN} > ${CGROUP_MOUNTPOINT}/release_agent
 
     eend 0
 }
