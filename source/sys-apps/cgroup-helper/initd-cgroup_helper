@@ -25,6 +25,7 @@ start() {
 	[[ -d ${CGROUP_MOUNTPOINT}/user ]] && chmod 0777 ${CGROUP_MOUNTPOINT}/user
     /bin/echo ${CGROUP_CLEAN} > ${CGROUP_MOUNTPOINT}/release_agent
 	/bin/echo '1' > ${CGROUP_MOUNTPOINT}/user/notify_on_release
+	/bin/echo '1' > ${CGROUP_MOUNTPOINT}/notify_on_release
 
     eend $?
 }
