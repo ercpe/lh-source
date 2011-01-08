@@ -1,4 +1,5 @@
 #!/bin/sh
-source /etc/conf.d/cgroup_helper
+source /etc/conf.d/cgroup-helper
 
 rmdir ${CGROUP_MOUNTPOINT}/$*
+
