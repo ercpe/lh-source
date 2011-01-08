@@ -1,0 +1,36 @@
+#!/sbin/runscript
+
+depend() {
+    need localmount
+}
+
+start() {
+    ebegin "Starting cgroup responsiveness helper"
+
+    if ! grep -qw cgroup /proc/filesystems; then
+        eend 1 "No cgroup filesystem found"
+        return 1
+    fi
+
+	kern_version=`/usr/bin/uname -r|/usr/bin/cut -d\- -f1|/usr/bin/tr -d '.'`
+	if [ $kern_version -lt 2638 ] ; then
+		mount -t cgroup cgroup ${CGROUP_MOUNTPOINT} -o cpu
+	else
+		mount -t cgroup cgroup ${CGROUP_MOUNTPOINT} -o cpu,blkio
+	fi
+
+    if ! grep -qw ${CGROUP_MOUNTPOINT} /proc/mounts; then
+        eend 1 "No cgroup filesystem mounted in ${CGROUP_MOUNTPOINT}"
+        return 1
+    fi
+
+    mkdir -m 0777 ${CGROUP_MOUNTPOINT}/user
+    /bin/echo ${CGROUP_CLEAN} >${CGROUP_MOUNTPOINT}/release_agent
+
+    eend 0
+}
+
+stop() {
+    ebegin "Stopping cgroupresponsiveness helper"
+    eend 0
+}
