@@ -24,7 +24,8 @@ start() {
         return 1
     fi
 
-    mkdir -m 0777 ${CGROUP_MOUNTPOINT}/user
+	[[ -d ${CGROUP_MOUNTPOINT}/user ]] || mkdir ${CGROUP_MOUNTPOINT}/user
+	[[ -d ${CGROUP_MOUNTPOINT}/user ]] && chmod 0777 ${CGROUP_MOUNTPOINT}/user
     /bin/echo ${CGROUP_CLEAN} > ${CGROUP_MOUNTPOINT}/release_agent
 
     eend 0
