@@ -27,3 +27,7 @@ stop() {
 		$SCRIPT "${CONFIG_DIR}/stopped";
 	fi
 }
+
+status() {
+	iptables -L -x
+}
