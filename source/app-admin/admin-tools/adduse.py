@@ -86,6 +86,14 @@ def clean_uses(adict):
 	return newdict
 
 def add_use(pkg, uses):
+	
+	from portage.dbapi.porttree import portdbapi
+	dbapi = portdbapi()
+
+	if not pkg in dbapi.cp_all():
+		if raw_input("'%s' does not look like a valid package. Add it anyway? [y/N]" % pkg).lower() != "y":
+			return
+	
 	print "Adding uses %s to package %s" % (', '.join(uses), pkg)
 
 	current_uses, trash = read_uses()
@@ -103,10 +111,8 @@ def add_use(pkg, uses):
 		shutil.copyfile(PACKAGE_USE, PACKAGE_USE + ".backup")
 
 	with open(PACKAGE_USE, 'w') as f:
-		#for k, v in uses.iteritems():
 		for k in sorted(uses.keys()):
 			f.write("%s %s\n" % (k, ' '.join(uses[k])))
-			#f.write("%s %s\n" % (k, ' '.join(v)))
 
 		for x in trash:
 			f.write("%s\n" % x)
