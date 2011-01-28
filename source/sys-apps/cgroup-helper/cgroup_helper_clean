@@ -1,4 +1,6 @@
 #!/bin/sh
 source /etc/conf.d/cgroup-helper
 
-rmdir ${CGROUP_MOUNTPOINT}/user/$*
+rmdir ${CGROUP_MOUNTPOINT}/$*
+[[ -d ${CGROUP_MOUNTPOINT}/user ]] || mkdir ${CGROUP_MOUNTPOINT}/user
+[[ -d ${CGROUP_MOUNTPOINT}/user ]] && chmod 0777 ${CGROUP_MOUNTPOINT}/user
