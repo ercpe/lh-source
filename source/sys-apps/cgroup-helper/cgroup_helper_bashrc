@@ -10,4 +10,5 @@ if [ "$PS1" ]; then
 		echo "Something is wrong with your Cgroups!"
 		echo "No ${CGROUP_MOUNTPOINT}/user available!"
 		echo "Try rc-service cgroup-helper restart"
+	fi
 fi
