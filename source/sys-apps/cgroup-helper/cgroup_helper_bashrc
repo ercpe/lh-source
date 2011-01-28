@@ -2,7 +2,12 @@
 source /etc/conf.d/cgroup-helper
 
 if [ "$PS1" ]; then
-	mkdir -p -m 0700 ${CGROUP_MOUNTPOINT}/user/$$ > /dev/null 2>&1
-	/bin/echo $$ > ${CGROUP_MOUNTPOINT}/user/$$/tasks
-	/bin/echo '1' > ${CGROUP_MOUNTPOINT}/user/$$/notify_on_release
+	if [[ -d ${CGROUP_MOUNTPOINT}/user ]]; then
+		mkdir -p -m 0700 ${CGROUP_MOUNTPOINT}/user/$$ > /dev/null 2>&1
+		/bin/echo $$ > ${CGROUP_MOUNTPOINT}/user/$$/tasks
+		/bin/echo '1' > ${CGROUP_MOUNTPOINT}/user/$$/notify_on_release
+	else
+		echo "Something is wrong with your Cgroups!"
+		echo "No ${CGROUP_MOUNTPOINT}/user available!"
+		echo "Try rc-service cgroup-helper restart"
 fi

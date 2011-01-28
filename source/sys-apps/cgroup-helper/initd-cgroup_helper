@@ -1,16 +1,16 @@
 #!/sbin/runscript
 
 depend() {
-    need localmount
+	need localmount
 }
 
 start() {
-    ebegin "Starting cgroup responsiveness helper"
+	ebegin "Starting cgroup responsiveness helper"
 
-    if ! grep -qw cgroup /proc/filesystems; then
-        eend 1 "No cgroup filesystem found"
-        return 1
-    fi
+	if ! grep -qw cgroup /proc/filesystems; then
+		eend 1 "No cgroup filesystem found"
+		return 1
+	fi
 
 	if ! grep -qw ${CGROUP_MOUNTPOINT} /proc/mounts; then
 		kern_version=`/usr/bin/uname -r|/usr/bin/cut -d\- -f1|/usr/bin/tr -d '.'`
@@ -23,15 +23,15 @@ start() {
 
 	[[ -d ${CGROUP_MOUNTPOINT}/user ]] || mkdir ${CGROUP_MOUNTPOINT}/user
 	[[ -d ${CGROUP_MOUNTPOINT}/user ]] && chmod 0777 ${CGROUP_MOUNTPOINT}/user
-    /bin/echo ${CGROUP_CLEAN} > ${CGROUP_MOUNTPOINT}/release_agent
+	/bin/echo ${CGROUP_CLEAN} > ${CGROUP_MOUNTPOINT}/release_agent
 	/bin/echo '1' > ${CGROUP_MOUNTPOINT}/user/notify_on_release
 	/bin/echo '1' > ${CGROUP_MOUNTPOINT}/notify_on_release
 
-    eend $?
+	eend $?
 }
 
 stop() {
-    ebegin "Stopping cgroupresponsiveness helper"
+	ebegin "Stopping cgroupresponsiveness helper"
 	umount ${CGROUP_MOUNTPOINT}
-    eend $?
+	eend $?
 }
