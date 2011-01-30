@@ -40,8 +40,7 @@ def read_uses():
 					if match:
 						pkg = match.group(1)
 						uses = split_re.split(match.group(2))
-						#print "%s: %s" % (pkg, ' '.join(uses))
-	
+
 						if not pkg or len(pkg.strip()) == 0 or not uses or len(uses) == 0:
 							print "Skipping garbage: %s" % line
 							continue 
@@ -65,7 +64,6 @@ def negate(use):
 def clean_uses(adict):
 	newdict = {}
 	for pkg, uses in adict.iteritems():
-		#print "cleaning package %s" % pkg
 
 		newuses = []
 
@@ -86,11 +84,9 @@ def clean_uses(adict):
 	return newdict
 
 def add_use(pkg, uses):
-	
-	from portage.dbapi.porttree import portdbapi
-	dbapi = portdbapi()
+	porttree = portage.db[portage.root]['porttree']
 
-	if not pkg in dbapi.cp_all():
+	if not pkg in porttree.dbapi.cp_all():
 		if raw_input("'%s' does not look like a valid package. Add it anyway? [y/N]" % pkg).lower() != "y":
 			return
 	
