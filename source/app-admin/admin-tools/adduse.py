@@ -83,23 +83,49 @@ def clean_uses(adict):
 
 	return newdict
 
-def add_use(pkg, uses):
+def test_package(pkg):
 	porttree = portage.db[portage.root]['porttree']
 
-	if not pkg in porttree.dbapi.cp_all():
-		if raw_input("'%s' does not look like a valid package. Add it anyway? [y/N]" % pkg).lower() != "y":
-			return
+	cp_all = porttree.dbapi.cp_all()
+
+	if not pkg in cp_all:
+		matches = [x for x in cp_all if pkg in x]
+		
+		if len(matches) > 0:
+			print "Package name does not exist. Possible packages:"
+			print '\n'.join(["[%s] %s" % (i+1, matches[i]) for i in xrange(0, len(matches))])
+			print ""
+			pkg_num = raw_input("Package number [1-%s]: " % len(matches))
+			
+			if pkg_num.isdigit():
+				pkg_num = int(pkg_num)
+				if pkg_num <= len(matches):
+					return matches[pkg_num-1]
+			else:
+				return None 
+		else:
+			if raw_input("'%s' does not look like a valid package. Add it anyway? [y/N]" % pkg).lower() != "y":
+				return None
+			else:
+				return pkg
+
+def add_use(pkg, uses):
 	
-	print "Adding uses %s to package %s" % (', '.join(uses), pkg)
+	package = test_package(pkg)
+
+	if not package:
+		return
+	
+	print "Adding uses %s to package %s" % (', '.join(uses), package)
 
 	current_uses, trash = read_uses()
 
-	if pkg in current_uses.keys():
-		u = current_uses[pkg]
+	if package in current_uses.keys():
+		u = current_uses[package]
 		u.extend(uses)
-		current_uses[pkg] = u
+		current_uses[package] = u
 	else:
-		current_uses[pkg] = uses
+		current_uses[package] = uses
 
 	uses = clean_uses(current_uses)
 
