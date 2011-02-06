@@ -1,0 +1,19 @@
+#!/sbin/runscript
+
+SCRIPT="/usr/sbin/alix-leds.py"
+
+start() {
+	if [ "${STARTUP_DISCO}" == "true" ]; then
+		$SCRIPT -d
+	fi
+
+	[[ ! -z "${LED1_TRIGGER}" ]] && ${SCRIPT} -l 1 -t "${LED1_TRIGGER}" ${LED1_TRIGGER_OPTS}
+	[[ ! -z "${LED2_TRIGGER}" ]] && ${SCRIPT} -l 2 -t "${LED2_TRIGGER}" ${LED2_TRIGGER_OPTS}
+	[[ ! -z "${LED3_TRIGGER}" ]] && ${SCRIPT} -l 3 -t "${LED3_TRIGGER}" ${LED3_TRIGGER_OPTS}
+
+	return 0;
+}
+
+stop() {
+	return 0;
+}

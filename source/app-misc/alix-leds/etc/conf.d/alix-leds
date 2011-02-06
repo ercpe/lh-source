@@ -1,0 +1,21 @@
+
+# Do some funky disco lighting on startup
+STARTUP_DISCO="true"
+
+
+# Available triggers (depending on your kernel configuration):
+#
+#  heartbeat 		LED blinks pulse - short pause - pulse - long pause - pulse - short pause...
+#  timer			Only valid with --delay-on and --delay-off in _OPTS
+#					LED is set to on for --delay-on ms and to off for --delay-off ms
+#  netfilter-XX		The LED blinks triggered by an iptables rule
+# 					(see netfilter LED target documentation for details)
+
+LED1_TRIGGER=""
+LED1_TRIGGER_OPTS=""
+
+LED2_TRIGGER=""
+LED2_TRIGGER_OPTS=""
+
+LED3_TRIGGER=""
+LED3_TRIGGER_OPTS=""
