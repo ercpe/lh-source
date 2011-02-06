@@ -88,7 +88,9 @@ def test_package(pkg):
 
 	cp_all = porttree.dbapi.cp_all()
 
-	if not pkg in cp_all:
+	if pkg in cp_all:
+		return pkg
+	else:
 		matches = [x for x in cp_all if pkg in x]
 		
 		if len(matches) > 0:
