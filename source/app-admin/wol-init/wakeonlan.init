@@ -1,0 +1,18 @@
+#!/sbin/runscript
+
+depend() {
+	need net
+}
+
+start() {
+	ebegin "Setting Wake On LAN Mode..."
+	eend $? "Failed to start ethtool"
+}
+
+stop() {
+	for device in ${DEVICES}; do
+		ebegin "Activating Wake Up On Lan ${device}"
+			/usr/sbin/ethtool -s ${device} wol ${MODE}
+		eend $? "Failed to set WOL correctly"
+	done
+}
