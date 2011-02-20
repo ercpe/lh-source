@@ -155,6 +155,78 @@ case "$version" in
         echo "Please use -V 9.4 at the moment. Support for 9.5 is not yet implemented."
         exit $ST_UK
         ;;
+	9.7)
+        check_pid() {
+            if [ -f "$path_pid/$name_pid" ]
+            then
+                retval=0
+            else
+                retval=1
+            fi
+        }
+
+        trigger_stats() {
+            sudo rndc stats
+        }
+
+        get_vals() {
+			stats_last=$(tail -n240 $path_stats/named.stats | sed '/++ Name Server Statistics ++/,/++/!d' | grep -Po '(\s+\d+\s.*)' | awk -v 'RS=\n\n' '1;{exit}');
+			stats_cur=$(tail -n120 $path_stats/named.stats | sed '/++ Name Server Statistics ++/,/++/!d' | grep -Po '(\s+\d+\s.*)');
+
+			success_cur=$(echo $stats_cur | grep -Po '(\d+) queries resulted in successful answer' | awk '{ print $1; }');
+			nxrrset_cur=$(echo $stats_cur | grep -Po "(\d+) queries resulted in nxrrset" | awk '{ print $1; }');
+			nxdomain_cur=$(echo $stats_cur | grep -Po "(\d+) queries resulted in NXDOMAIN" | awk '{ print $1; }');
+			recursion_cur=$(echo $stats_cur | grep -Po "(\d+) queries caused recursion" | awk '{ print $1; }');
+			failure_cur=$(echo $stats_cur | grep -Po "(\d+) queries resulted in SERVFAIL" | awk '{ print $1; }');
+			duplicate_cur=$(echo $stats_cur | grep -Po "(\d+) duplicate queries received" | awk '{ print $1; }');
+			dropped_cur=$(echo $stats_cur | grep -Po "(\d+) other query failures" | awk '{ print $1; }');
+
+			success_last=$(echo $stats_last | grep -Po '(\d+) queries resulted in successful answer' | awk '{ print $1; }');
+			nxrrset_last=$(echo $stats_last | grep -Po "(\d+) queries resulted in nxrrset" | awk '{ print $1; }');
+			nxdomain_last=$(echo $stats_last | grep -Po "(\d+) queries resulted in NXDOMAIN" | awk '{ print $1; }');
+			recursion_last=$(echo $stats_last | grep -Po "(\d+) queries caused recursion" | awk '{ print $1; }');
+			failure_last=$(echo $stats_last | grep -Po "(\d+) queries resulted in SERVFAIL" | awk '{ print $1; }');
+			duplicate_last=$(echo $stats_last | grep -Po "(\d+) duplicate queries received" | awk '{ print $1; }');
+			dropped_last=$(echo $stats_last | grep -Po "(\d+) other query failures" | awk '{ print $1; }');
+
+			success=`expr $success_cur - $success_last`
+			nxrrset=`expr $nxrrset_cur - $nxrrset_last`
+			nxdomain=`expr $nxdomain_cur - $nxdomain_last`
+			recursion=`expr $recursion_cur - $recursion_last`
+			failure=`expr $failure_cur - $failure_last`
+			duplicate=`expr $duplicate_cur - $duplicate_last`
+			dropped=`expr $dropped_cur - $dropped_last`
+
+			if [ "$success" == "-" ]; then
+				success="0"
+			fi
+			if [ "$nxrrset" == "-" ]; then
+				nxrrset="0"
+			fi
+			if [ "$nxdomain" == "-" ]; then
+				nxdomain="0"
+			fi
+			if [ "$recursion" == "-" ]; then
+				recursion="0"
+			fi
+			if [ "$failure" == "-" ]; then
+				failure="0"
+			fi
+			if [ "$duplicate" == "-" ]; then
+				duplicate="0"
+			fi
+			if [ "$dropped" == "-" ]; then
+				dropped="0"
+			fi
+
+			referral=0
+        }
+
+        get_perfdata() {
+            perfdata=`echo "'success'=$success 'referral'=$referral 'nxrrset'=$nxrrset 'nxdomain'=$nxdomain 'recursion'=$recursion 'failure'=$failure 'duplicate'=$duplicate 'dropped'=$dropped"`
+        }
+
+		;;
     *)
         echo "Please use -V 9.4 at the moment. Support for 9.5 is not yet implemented."
         exit $ST_UK
