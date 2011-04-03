@@ -7,8 +7,8 @@ if [ -f "$entropy_file" ]; then
 
 	ea=$(cat $entropy_file);
 	msg="Entropy available: ${ea}";
-
-	echo $msg
+	perf_data="|entropy=${ea}";
+	echo "${msg}${perf_data}";
 
 	if [ -n "$min" ]; then
 		if [ "$ea" -lt "$min" ]; then
