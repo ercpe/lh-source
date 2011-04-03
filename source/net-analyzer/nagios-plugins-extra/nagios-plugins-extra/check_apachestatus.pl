@@ -159,9 +159,9 @@ if ($response->is_success) {
 
   # get requests/sec, kb/sec, kb/req
   $i = 0;
-  my $ReqPerSec=undef;
-  my $KbPerSec=undef;
-  my $KbPerReq=undef;
+  my $ReqPerSec=0;
+  my $KbPerSec=0;
+  my $KbPerReq=0;
   while (($i < @webcontentarr) && ((!defined($ReqPerSec)) || (!defined($KbPerSec)) || (!defined($KbPerReq)))) {
     if ($webcontentarr[$i] =~ /([0-9]*\.?[0-9]+)\s+requests\/sec\s+-\s+([0-9]*\.?[0-9]+)\s+kB\/second\s+-\s+([0-9]*\.?[0-9]+)\s+kB\/request/) {
       ($ReqPerSec, $KbPerSec, $KbPerReq) = ($webcontentarr[$i] =~ /([0-9]*\.?[0-9]+)\s+requests\/sec\s+-\s+([0-9]*\.?[0-9]+)\s+kB\/second\s+-\s+([0-9]*\.?[0-9]+)\s+kB\/request/);
