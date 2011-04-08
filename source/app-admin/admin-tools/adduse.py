@@ -35,6 +35,8 @@ def read_uses():
 		with open(PACKAGE_USE) as f:
 			for l in f:
 				line = l.strip() 
+
+				# skip empty lines and comments
 				if line != "" and not comment_re.match(line):
 					match = uses_re.match(line)
 					if match:
@@ -63,8 +65,8 @@ def negate(use):
 
 def clean_uses(adict):
 	newdict = {}
-	for pkg, uses in adict.iteritems():
 
+	for pkg, uses in adict.iteritems():
 		newuses = []
 
 		for currentUse in uses:
@@ -88,9 +90,15 @@ def test_package(pkg):
 
 	cp_all = porttree.dbapi.cp_all()
 
+	org_pkg = pkg
+	if ':' in pkg:
+		# JS, 2011-04-08: slot in cp (#124)
+		pkg = pkg[:pkg.index(':')]
+
 	if pkg in cp_all:
-		return pkg
+		return org_pkg
 	else:
+		# no exact match found. let the user choose
 		matches = [x for x in cp_all if pkg in x]
 		
 		if len(matches) > 0:
@@ -106,7 +114,7 @@ def test_package(pkg):
 			else:
 				return None 
 		else:
-			if raw_input("'%s' does not look like a valid package. Add it anyway? [y/N]" % pkg).lower() != "y":
+			if raw_input("'%s' does not look like a valid package. Add it anyway? [y/N] " % pkg).lower() != "y":
 				return None
 			else:
 				return pkg
