@@ -1,6 +1,7 @@
 #!/bin/bash
 # extract - extract common file formats
 # Author: Gen2ly
+# Author: jlec
 
 # Text color variables
 TXTBLD=$(tput bold)     # Bold
@@ -41,6 +42,14 @@ if [[ -z "$@" ]]; then
       *.tgz)      if [ -z $2 ]; then
                     tar xvzf $1; else
                     tar xvzf $1 -C $2    
+                  fi   ;;
+      *.tar.xz)   if [ -z $2 ]; then
+                    tar xvJf $1; else
+                    tar xvJf $1 -C $2  
+                  fi                   ;;
+      *.txz)      if [ -z $2 ]; then
+                    tar xvJf $1; else
+                    tar xvJf $1 -C $2    
                   fi   ;;
       *.rar)      7z x $1              ;;
       *.zip)      unzip $1             ;;
