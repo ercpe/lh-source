@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [[ $UID != 0 ]]; then
+	echo "Execute as root!"
+	exit 1
+fi
+
+/usr/bin/get-squashed-portage;
+/etc/init.d/squashed-portage restart;
+emerge --metadata;
+#emerge --regen;
+layman -s ALL;
+q -r;
+eix-update;
