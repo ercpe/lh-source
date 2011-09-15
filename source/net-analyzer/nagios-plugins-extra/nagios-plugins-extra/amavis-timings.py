@@ -48,11 +48,12 @@ for line, match in [x for x in lines if x[1]]:
 
 if options.nagios_output:
 	perf_data = []
-	for check_name, data in timings.iteritems():
+	for check_name in sorted(timings.keys()):
+		data = timings[check_name]
 		avg = sum(data) / len(data)
 		perf_data.append("%s=%s" % (check_name, round(avg, 2)))
 		
-	print "Timings OK | %s" % ', '.join(perf_data)
+	print "Timings OK | %s" % ';'.join(perf_data)
 else:
 	for check_name, data in timings.iteritems():
 		print "%s: Min %s, Max: %s, Avg: %s" % (check_name, min(data), max(data), sum(data) / len(data))
