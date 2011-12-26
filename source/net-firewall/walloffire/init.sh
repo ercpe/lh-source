@@ -14,7 +14,7 @@ start() {
 	if [[ ! -d "$CONFIG_DIR" || ! -d "${CONFIG_DIR}/started" ]]; then
 		eerror "CONFIG_DIR not set";
 	else
-		$SCRIPT "${CONFIG_DIR}/started";
+		${SCRIPT} "${CONFIG_DIR}/started";
 	fi
 }
 
@@ -24,7 +24,7 @@ stop() {
 	if [[ ! -d "$CONFIG_DIR" || ! -d "${CONFIG_DIR}/stopped" ]]; then
 		eerror "CONFIG_DIR not set";
 	else
-		$SCRIPT "${CONFIG_DIR}/stopped";
+		${SCRIPT} "${CONFIG_DIR}/stopped";
 	fi
 }
 

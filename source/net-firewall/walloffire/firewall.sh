@@ -1,15 +1,18 @@
 #!/bin/bash
 if [ "$#" != 1 ]; then exit 0; fi;
 
-if [ -f "/etc/walloffire/walloffire.conf" ]; then
-	source "/etc/walloffire/walloffire.conf"
-fi
+CONFFILE="/etc/walloffire/walloffire.conf"
+
+[[ -r "${CONFFILE}" ]] && source "${CONFFILE}"
 
 for file in ${1}/*; do
-	cat $file | while read line; do
-		eval "$line" &> /dev/null;
+	einfo "	Processing rule set $(basename ${file})"
+	cat ${file} | sed -e '/^#/d' -e '/^$/d' | \
+	while read line; do
+		[[ ${FW_DEBUG} == "true" ]] && eval "echo ${line}"
+		eval "${line}" &> /dev/null;
 		if [ $? != 0 ]; then
-			echo "Error processing rule: $line in file $file";
+			ewarn "Error processing rule: ${line} in file ${file}";
 		fi
 	done
 done
