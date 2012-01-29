@@ -109,7 +109,7 @@ try:
 	for chip_name, feature_name, feature_value in sensor_values:
 		name = feature_name # breaks on systems with multiple chips!
 		
-		if chip_name.startswith('coretemp'):
+		if 'coretemp' in chip_name or 'cputemp' in chip_name:
 			name = "coretemp%s" % coretemp_idx
 			coretemp_idx += 1
 		
