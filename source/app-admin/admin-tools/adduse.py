@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 # -*- coding: utf-8 -*-
 
 '''
@@ -17,15 +17,43 @@ import shutil
 import sys
 import re
 import portage
+from portage.versions import _cp, _vr
+import argparse
 
 comment_re = re.compile("^\s*#.*", re.IGNORECASE)
-uses_re = re.compile("^\s*([\w_\-0-9\+]+/[\w_\-0-9\+]+) (.*)", re.IGNORECASE)
+# /usr/lib64/portage/pym/portage/versions.py says this
+#_cat = r'[\w+][\w+.-]*'
+#_pkg = r'[\w+][\w+-]*?'
+#_v = r'(\d+)((\.\d+)*)([a-z]?)((_(pre|p|beta|alpha|rc)\d*)*)'
+#_rev = r'\d+'
+#_vr = _v + '(-r(' + _rev + '))?'
+#_cp = '(' + _cat + '/' + _pkg + '(-' + _vr + ')?)'
+
+_verrule = r'([<|>]?=?)?'
+
+uses_re = re.compile("^\s*" + '(?P<catpkg>' + _verrule + _cp + ')' + " (?P<useflags>(.*))", re.IGNORECASE)
 split_re = re.compile("\s+", re.IGNORECASE)
 
 prefix_root = portage.settings['EPREFIX']
 if not prefix_root.strip():
 	prefix_root = "/"
 PACKAGE_USE=os.path.join(prefix_root, "etc/portage/package.use")
+#PACKAGE_USE = "/local/scripts/package.use"
+
+def argumentparser():
+	parser = argparse.ArgumentParser(
+						description="Modify local USE flags for packages in /etc/portage/package.use")
+	parser.add_argument(
+					'package',
+					type=str,
+					help="Package name: either as Package or Category/Package")
+	parser.add_argument(
+					'USE',
+					type=str,
+					nargs=argparse.REMAINDER,
+					help="USE flags to change: +foo -bar -baz")
+	return parser
+	
 
 def read_uses():
 	packages = {}
@@ -34,20 +62,20 @@ def read_uses():
 	if os.path.exists(PACKAGE_USE):
 		with open(PACKAGE_USE) as f:
 			for l in f:
-				line = l.strip() 
+				line = l.strip()
 
 				# skip empty lines and comments
 				if line != "" and not comment_re.match(line):
 					match = uses_re.match(line)
 					if match:
-						pkg = match.group(1)
-						uses = split_re.split(match.group(2))
+						pkg = match.group('catpkg')
+						uses = split_re.split(match.group('useflags'))
 
 						if not pkg or len(pkg.strip()) == 0 or not uses or len(uses) == 0:
 							print "Skipping garbage: %s" % line
 							continue 
 	
-						if pkg in packages.keys():
+						if pkg in packages:
 							u = packages[pkg]
 							u.extend(uses)
 							packages[pkg] = u
@@ -120,7 +148,7 @@ def test_package(pkg):
 				return pkg
 
 def add_use(pkg, uses):
-	
+
 	package = test_package(pkg)
 
 	if not package:
@@ -130,11 +158,15 @@ def add_use(pkg, uses):
 
 	current_uses, trash = read_uses()
 
-	if package in current_uses.keys():
-		u = current_uses[package]
-		u.extend(uses)
-		current_uses[package] = u
-	else:
+	matched = False
+	pkg_re = re.compile(_verrule + pkg + '(-' + _vr + ')?', re.IGNORECASE)
+	for key in current_uses.keys():
+		if pkg_re.search(key):
+			u = current_uses[key]
+			u.extend(uses)
+			current_uses[key] = u
+			matched = True
+	if not matched:
 		current_uses[package] = uses
 
 	uses = clean_uses(current_uses)
@@ -150,8 +182,10 @@ def add_use(pkg, uses):
 			f.write("%s\n" % x)
 
 if __name__ == '__main__':
-	args = sys.argv[1:]
-
+	j = argumentparser()
+	adduseargs = j.parse_args()
+	#adduseargs = j.parse_args(['app-portage/eix', '-tools', '-scripts'])
+	
 	if not os.path.exists(PACKAGE_USE):
 		if not os.path.exists(os.path.dirname(PACKAGE_USE)):
 			try:
@@ -161,12 +195,7 @@ if __name__ == '__main__':
 				sys.exit(1)
 
 	if os.path.exists(PACKAGE_USE) and not os.access(PACKAGE_USE, os.W_OK):
-		print "%s is not writable!" % PACKAGE_USE
+		print "You are not allowed to write to %s." % (PACKAGE_USE)
 		sys.exit(1)
 
-	if len(args) >= 2:
-		add_use(args[0], args[1:])
-	else:
-		print "USAGE: adduse <package> use1... useN"
-		sys.exit(1)
-
+	add_use(adduseargs.package, adduseargs.USE)
