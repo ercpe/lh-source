@@ -38,7 +38,6 @@ prefix_root = portage.settings['EPREFIX']
 if not prefix_root.strip():
 	prefix_root = "/"
 PACKAGE_USE=os.path.join(prefix_root, "etc/portage/package.use")
-#PACKAGE_USE = "/local/scripts/package.use"
 
 def argumentparser():
 	parser = argparse.ArgumentParser(
@@ -57,7 +56,9 @@ def argumentparser():
 
 def read_uses():
 	packages = {}
+	comments = {}
 	garbage = []
+	commentsline = []
 	
 	if os.path.exists(PACKAGE_USE):
 		with open(PACKAGE_USE) as f:
@@ -65,25 +66,37 @@ def read_uses():
 				line = l.strip()
 
 				# skip empty lines and comments
-				if line != "" and not comment_re.match(line):
-					match = uses_re.match(line)
-					if match:
-						pkg = match.group('catpkg')
-						uses = split_re.split(match.group('useflags'))
-
-						if not pkg or len(pkg.strip()) == 0 or not uses or len(uses) == 0:
-							print "Skipping garbage: %s" % line
-							continue 
-	
-						if pkg in packages:
-							u = packages[pkg]
-							u.extend(uses)
-							packages[pkg] = u
-						else:
-							packages[pkg] = uses
+				if line != "":
+					if comment_re.match(line):
+						commentsline.append(line)
 					else:
-						garbage.append(line)
-	return packages, garbage
+						match = uses_re.match(line)
+						if match:
+							pkg = match.group('catpkg')
+							uses = split_re.split(match.group('useflags'))
+	
+							if not pkg or len(pkg.strip()) == 0 or not uses or len(uses) == 0:
+								print "Skipping garbage: %s" % line
+								continue 
+		
+							if pkg in packages:
+								u = packages[pkg]
+								u.extend(uses)
+								packages[pkg] = u
+							else:
+								packages[pkg] = uses
+	
+							if pkg in comments:
+								c = comments[pkg]
+								c.extend(commentsline)
+								comments[pkg] = c
+								del commentsline[:]
+							else:
+								comments[pkg] = commentsline
+								commentsline = []
+						else:
+							garbage.append(line)
+	return packages, comments, garbage
 
 def negate(use):
 	if use.startswith("-"):
@@ -156,7 +169,7 @@ def add_use(pkg, uses):
 	
 	print "Adding uses %s to package %s" % (', '.join(uses), package)
 
-	current_uses, trash = read_uses()
+	current_uses, comments_line, trash = read_uses()
 
 	matched = False
 	pkg_re = re.compile(_verrule + pkg + '(-' + _vr + ')?', re.IGNORECASE)
@@ -176,6 +189,7 @@ def add_use(pkg, uses):
 
 	with open(PACKAGE_USE, 'w') as f:
 		for k in sorted(uses.keys()):
+			f.write("%s\n" % (' \n'.join(comments_line[k])))
 			f.write("%s %s\n" % (k, ' '.join(uses[k])))
 
 		for x in trash:
@@ -184,7 +198,6 @@ def add_use(pkg, uses):
 if __name__ == '__main__':
 	j = argumentparser()
 	adduseargs = j.parse_args()
-	#adduseargs = j.parse_args(['app-portage/eix', '-tools', '-scripts'])
 	
 	if not os.path.exists(PACKAGE_USE):
 		if not os.path.exists(os.path.dirname(PACKAGE_USE)):
