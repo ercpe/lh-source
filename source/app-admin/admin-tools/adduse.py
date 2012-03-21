@@ -189,7 +189,8 @@ def add_use(pkg, uses):
 
 	with open(PACKAGE_USE, 'w') as f:
 		for k in sorted(uses.keys()):
-			f.write("%s\n" % (' \n'.join(comments_line[k])))
+			if comments_line[k]:
+				f.write("%s\n" % (' \n'.join(comments_line[k])))
 			f.write("%s %s\n" % (k, ' '.join(uses[k])))
 
 		for x in trash:
