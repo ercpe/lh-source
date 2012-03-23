@@ -2,14 +2,9 @@
 # -*- coding: utf-8 -*-
 
 '''
-Copyright Information
-2010 Johann Schmitz, Duesseldorf, Germany
-
-@author Johann Schmitz (johann@j-schmitz.net)
 @version $Id$
 
-Web:  www.j-schmitz.net
-Mail: johann@j-schmitz.net
+Part of the app-admin/admin-tools package in the last-hope overlay (http://www.j-schmitz.net/projects/admin-tools/)
 '''
 
 import os
@@ -17,199 +12,219 @@ import shutil
 import sys
 import re
 import portage
-from portage.versions import _cp, _vr
+from portage.versions import _cp, _vr, pkgsplit, pkgcmp, _cpv, _cat, _pkg
 import argparse
 
 comment_re = re.compile("^\s*#.*", re.IGNORECASE)
-# /usr/lib64/portage/pym/portage/versions.py says this
-#_cat = r'[\w+][\w+.-]*'
-#_pkg = r'[\w+][\w+-]*?'
-#_v = r'(\d+)((\.\d+)*)([a-z]?)((_(pre|p|beta|alpha|rc)\d*)*)'
-#_rev = r'\d+'
-#_vr = _v + '(-r(' + _rev + '))?'
-#_cp = '(' + _cat + '/' + _pkg + '(-' + _vr + ')?)'
-
 _verrule = r'([<|>]?=?)?'
-
 uses_re = re.compile("^\s*" + '(?P<catpkg>' + _verrule + _cp + ')' + " (?P<useflags>(.*))", re.IGNORECASE)
-split_re = re.compile("\s+", re.IGNORECASE)
 
-prefix_root = portage.settings['EPREFIX']
-if not prefix_root.strip():
-	prefix_root = "/"
-PACKAGE_USE=os.path.join(prefix_root, "etc/portage/package.use")
 
-def argumentparser():
-	parser = argparse.ArgumentParser(
-						description="Modify local USE flags for packages in /etc/portage/package.use")
-	parser.add_argument(
-					'package',
-					type=str,
-					help="Package name: either as Package or Category/Package")
-	parser.add_argument(
-					'USE',
-					type=str,
-					nargs=argparse.REMAINDER,
-					help="USE flags to change: +foo -bar -baz")
-	return parser
+class PackageUSEEntry(object):
+	comments = []
+	package = None
+	uses = []
+		
+	def __init__(self, package=None, uses=[], comments=[]):
+		self.comments = comments
+		self.package = package
+		self.uses = uses
+
+	def __cmp__(self, other):
+		left = self.package.lstrip("<>=")
+		right = other.package.lstrip("<>=")
+		return cmp(left, right) # this does not take account of the version numbers, but thats ok 
+
+
+class PackageUSEHandler(object):
+	_package_use_file = None
+	_entries = []
+	_garbage = []
 	
+	def __init__(self, file=None):
 
-def read_uses():
-	packages = {}
-	comments = {}
-	garbage = []
-	commentsline = []
-	
-	if os.path.exists(PACKAGE_USE):
-		with open(PACKAGE_USE) as f:
+		if file:
+			self._package_use_file = file
+		else:
+			# makes this class PREFIX aware
+			prefix_root = portage.settings['EPREFIX']
+			if not prefix_root.strip():
+				prefix_root = "/"
+			self._package_use_file = os.path.join(prefix_root, "etc/portage/package.use")
+		
+		self.read()
+
+	def read(self):
+		"""Reads the list of packages/use flags from the package.use file"""
+		
+		if not os.path.exists(self._package_use_file):
+			return
+		
+		if not os.access(self._package_use_file, os.R_OK):
+			raise IOError("Cannot read file %s" % self._package_use_file)
+		
+		comments = []
+		
+		with open(self._package_use_file) as f:
 			for l in f:
 				line = l.strip()
 
-				# skip empty lines and comments
-				if line != "":
-					if comment_re.match(line):
-						commentsline.append(line)
-					else:
-						match = uses_re.match(line)
-						if match:
-							pkg = match.group('catpkg')
-							uses = split_re.split(match.group('useflags'))
+				if not line:
+					continue # skip empty lines
+				
+				if comment_re.match(line):
+					comments.append(line)
+					continue
+
+				match = uses_re.match(line)			
+				if not match:
+					self._garbage.append(line) # the line is not a comment and not a valid entry for the package.use file
+					continue
+													
+				pkg = match.group('catpkg')
+				uses = re.split("\s+", match.group('useflags'))
+
+				if not pkg or len(pkg.strip()) == 0 or not uses or len(uses) == 0:
+					self._garbage.append(line)
+					continue
+
+				try:
+					# this test matches only duplicate strings
+					entry = (x for x in self._entries if x.package == pkg).next()
+					entry.comments.extend(comments)
+					entry.uses.extend(uses)
+					entry.uses = self._clean_uses(entry.uses)
+				except StopIteration:
+					entry = PackageUSEEntry(pkg, self._clean_uses(uses), comments)
+					self._entries.append(entry)
+
+				comments = []
+
+
+		if comments:
+			# comments at the end of the file (without a following package specification)
+			self._garbage.extend(comments)
+
+
+	def write(self):
+		"""Writes a sorted, cleaned list of packages/use flags to the package.use file"""
+
+		if not os.path.exists(self._package_use_file):
+			directory = os.path.dirname(self._package_use_file)
+			if not os.path.exists(directory):
+				try:
+					os.makedirs(directory, 0755)
+				except:
+					raise IOError("Could not create directory %s!" % directory)
 	
-							if not pkg or len(pkg.strip()) == 0 or not uses or len(uses) == 0:
-								print "Skipping garbage: %s" % line
-								continue 
-		
-							if pkg in packages:
-								u = packages[pkg]
-								u.extend(uses)
-								packages[pkg] = u
-							else:
-								packages[pkg] = uses
-	
-							if pkg in comments:
-								c = comments[pkg]
-								c.extend(commentsline)
-								comments[pkg] = c
-								del commentsline[:]
-							else:
-								comments[pkg] = commentsline
-								commentsline = []
-						else:
-							garbage.append(line)
-	return packages, comments, garbage
+		if os.path.exists(self._package_use_file) and not os.access(self._package_use_file, os.W_OK):
+			raise IOError("You are not allowed to write to %s." % (self._package_use_file))
 
-def negate(use):
-	if use.startswith("-"):
-		return use[1:]
-	else:
-		return "-%s" % use
 
-def clean_uses(adict):
-	newdict = {}
+ 		# sort the entries (uses the __cmp__() function on the entries object)
+		self._entries = sorted(self._entries)
 
-	for pkg, uses in adict.iteritems():
+		with open(self._package_use_file, 'w') as o:
+			for pkg in self._entries:
+				o.writelines(["%s\n" % x for x in pkg.comments])
+				o.write("%s %s\n" % (pkg.package, ' '.join(pkg.uses)))
+
+			o.writelines('\n'.join(self._garbage))
+			
+
+	def set_use(self, pkg, uses):
+		try:
+			entry = (x for x in self._entries if x.package == pkg).next()
+			entry.uses.extend(uses)
+			entry.uses = self._clean_uses(entry.uses)
+		except StopIteration:
+			entry = PackageUSEEntry(pkg, self._clean_uses(uses))
+			self._entries.append(entry)
+
+
+	def _negate(self, use):
+		if use.startswith("-"):
+			return use[1:]
+		else:
+			return "-%s" % use
+
+	def _clean_uses(self, uses):
 		newuses = []
+	
+		for current in uses:
+			neg_use = self._negate(current)
 
-		for currentUse in uses:
-			negUse = negate(currentUse)
+			if neg_use in newuses:
+				print "Removing flip use: %s (was: %s)" % (neg_use, current)
+				newuses.remove(neg_use)
 
-			if negUse in newuses:
-				print "Removing flip use: %s for package %s (was: %s)" % (negUse, pkg, currentUse)
-				newuses.remove(negUse)
-
-			if not currentUse in newuses:
-				newuses.append(currentUse)
+			if not current in newuses:
+				newuses.append(current)
 			else:
-				print "Removing dup use: %s for package %s" % (currentUse, pkg)
+				print "Removing dup use: %s" % current
 
-		newdict[pkg] = sorted(newuses)
+		return sorted(newuses)
 
-	return newdict
 
-def test_package(pkg):
+def test_package(package):
 	porttree = portage.db[portage.root]['porttree']
-
 	cp_all = porttree.dbapi.cp_all()
 
-	org_pkg = pkg
+	pkg = package
+
 	if ':' in pkg:
 		# JS, 2011-04-08: slot in cp (#124)
 		pkg = pkg[:pkg.index(':')]
-
-	if pkg in cp_all:
-		return org_pkg
 	else:
-		# no exact match found. let the user choose
-		matches = [x for x in cp_all if pkg in x]
-		
-		if len(matches) > 0:
-			print "Package name does not exist. Possible packages:"
-			print '\n'.join(["[%s] %s" % (i+1, matches[i]) for i in xrange(0, len(matches))])
-			print ""
-			pkg_num = raw_input("Package number [1-%s]: " % len(matches))
-			
-			if pkg_num.isdigit():
-				pkg_num = int(pkg_num)
-				if pkg_num <= len(matches):
-					return matches[pkg_num-1]
-			else:
-				return None 
-		else:
-			if raw_input("'%s' does not look like a valid package. Add it anyway? [y/N] " % pkg).lower() != "y":
-				return None
-			else:
-				return pkg
+		vm = re.match("^" + _verrule, pkg) # < or > or =
+		if vm and vm.group(1):
+			m = re.match("^" + _verrule + r'([\w+][\w+.-]*/[\w\-]+)' + _vr, pkg)
+			if not m:
+				raise Exception("Invlid cpv")
+			pkg = m.group(2).strip("-")
 
-def add_use(pkg, uses):
-
-	package = test_package(pkg)
-
-	if not package:
-		return
+	if pkg in cp_all: # exact match for cp
+		return package
 	
-	print "Adding uses %s to package %s" % (', '.join(uses), package)
+	# no exact match found. let the user choose
+	matches = [x for x in cp_all if pkg in x]
+	
+	if len(matches) > 0:
+		print "Package name does not exist. Possible packages:"
+		print '\n'.join(["[%s] %s" % (i+1, matches[i]) for i in xrange(0, len(matches))])
+		print ""
+		pkg_num = raw_input("Package number [1-%s]: " % len(matches))
+		
+		if pkg_num.isdigit():
+			pkg_num = int(pkg_num)
+			if pkg_num <= len(matches):
+				return matches[pkg_num-1]
+		else:
+			return None 
+	else:
+		if raw_input("'%s' does not look like a valid package. Add it anyway? [y/N] " % pkg).lower() != "y":
+			return None
+		else:
+			return package
 
-	current_uses, comments_line, trash = read_uses()
-
-	matched = False
-	pkg_re = re.compile(_verrule + pkg + '(-' + _vr + ')?', re.IGNORECASE)
-	for key in current_uses.keys():
-		if pkg_re.search(key):
-			u = current_uses[key]
-			u.extend(uses)
-			current_uses[key] = u
-			matched = True
-	if not matched:
-		current_uses[package] = uses
-
-	uses = clean_uses(current_uses)
-
-	if os.path.exists(PACKAGE_USE):
-		shutil.copyfile(PACKAGE_USE, PACKAGE_USE + ".backup")
-
-	with open(PACKAGE_USE, 'w') as f:
-		for k in sorted(uses.keys()):
-			if comments_line[k]:
-				f.write("%s\n" % (' \n'.join(comments_line[k])))
-			f.write("%s %s\n" % (k, ' '.join(uses[k])))
-
-		for x in trash:
-			f.write("%s\n" % x)
 
 if __name__ == '__main__':
-	j = argumentparser()
-	adduseargs = j.parse_args()
-	
-	if not os.path.exists(PACKAGE_USE):
-		if not os.path.exists(os.path.dirname(PACKAGE_USE)):
-			try:
-				os.makedirs(os.path.dirname(PACKAGE_USE), 0755)
-			except:
-				print "Could not create directory %s!" % os.path.dirname(PACKAGE_USE)
-				sys.exit(1)
+	parser = argparse.ArgumentParser(description="Modify local USE flags for packages in /etc/portage/package.use")
+	parser.add_argument('package', type=str, help="Package name: either as 'package' or 'category/package'")
+	parser.add_argument('--file', type=str, help="Alternate package.use file (defaults to the prefix-aware etc/portage/package.use)")
+	parser.add_argument('USE', type=str, nargs=argparse.REMAINDER, help="USE flags to change: +foo -bar -baz")
+	args = parser.parse_args()
 
-	if os.path.exists(PACKAGE_USE) and not os.access(PACKAGE_USE, os.W_OK):
-		print "You are not allowed to write to %s." % (PACKAGE_USE)
+	if not args.USE:
 		sys.exit(1)
 
-	add_use(adduseargs.package, adduseargs.USE)
+	package = test_package(args.package)
+	
+	if not package:
+		sys.exit(1)
+	
+	print "Adding uses %s to package %s" % (', '.join(args.USE), package)
+
+	puh = PackageUSEHandler(args.file)
+	puh.set_use(package, args.USE)
+	puh.write()
