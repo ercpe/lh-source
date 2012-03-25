@@ -242,6 +242,9 @@ if __name__ == '__main__':
 
 	package = test_package(args.package[0])
 	
+	if not package:
+		sys.exit(1)
+	
 	print "Adding uses %s to package %s" % (', '.join(args.USE), package)
 
 	puh = PackageUSEHandler(args.file)
