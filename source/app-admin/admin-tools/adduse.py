@@ -228,18 +228,19 @@ def test_package(package):
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Modify local USE flags for packages in /etc/portage/package.use")
-	parser.add_argument('package', type=str, help="Package name: either as 'package' or 'category/package'")
-	parser.add_argument('--file', type=str, help="Alternate package.use file (defaults to the prefix-aware etc/portage/package.use)")
+	parser.add_argument('package', type=str, nargs=1, help="Package name: either as 'package' or 'category/package'")
 	parser.add_argument('USE', type=str, nargs=argparse.REMAINDER, help="USE flags to change: +foo -bar -baz")
+	parser.add_argument('-f', '--file', type=str, help="Alternate package.use file (defaults to the prefix-aware etc/portage/package.use)")
 	args = parser.parse_args()
 
+	# We cannot exchange this, because positional arguments are only allowed to 
+	# start with "-" if -- is specified before or they look like neg. numbers.
+	# http://docs.python.org/dev/library/argparse.html#arguments-containing
 	if not args.USE:
+		parser.print_help()
 		sys.exit(1)
 
-	package = test_package(args.package)
-	
-	if not package:
-		sys.exit(1)
+	package = test_package(args.package[0])
 	
 	print "Adding uses %s to package %s" % (', '.join(args.USE), package)
 
