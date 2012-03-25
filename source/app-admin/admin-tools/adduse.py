@@ -93,9 +93,8 @@ class PackageUSEHandler(object):
 					entry = (x for x in self._entries if x.package == pkg).next()
 					entry.comments.extend(comments)
 					entry.uses.extend(uses)
-					entry.uses = self._clean_uses(entry.uses)
 				except StopIteration:
-					entry = PackageUSEEntry(pkg, self._clean_uses(uses), comments)
+					entry = PackageUSEEntry(pkg, uses, comments)
 					self._entries.append(entry)
 
 				comments = []
@@ -126,8 +125,10 @@ class PackageUSEHandler(object):
 
 		with open(self._package_use_file, 'w') as o:
 			for pkg in self._entries:
-				o.writelines(["%s\n" % x for x in pkg.comments])
-				o.write("%s %s\n" % (pkg.package, ' '.join(pkg.uses)))
+				pkg.uses = self._clean_uses(pkg.uses)
+				if pkg.uses:
+					o.writelines(["%s\n" % x for x in pkg.comments])
+					o.write("%s %s\n" % (pkg.package, ' '.join(pkg.uses)))
 
 			o.writelines('\n'.join(self._garbage))
 			
@@ -136,10 +137,27 @@ class PackageUSEHandler(object):
 		try:
 			entry = (x for x in self._entries if x.package == pkg).next()
 			entry.uses.extend(uses)
-			entry.uses = self._clean_uses(entry.uses)
 		except StopIteration:
-			entry = PackageUSEEntry(pkg, self._clean_uses(uses))
+			entry = PackageUSEEntry(pkg, uses)
 			self._entries.append(entry)
+
+		if not re.match(r'^' + _verrule, pkg).group(1):
+			# we set the use flag for foo/bar baz - change the use flag on all possible version dependent entries
+			for p in [x.package for x in self._entries]:
+				if re.match("^" + _verrule, p).group(1) and pkg in p: # pkg in p may be to fuzzy
+					self.remove_use(p, uses)
+
+	def remove_use(self, pkg, uses):
+		try:
+			entry = (x for x in self._entries if x.package == pkg).next()
+			
+			l = uses
+			l.extend([self._negate(x) for x in uses])
+			for u in l:
+				if u in entry.uses:
+					entry.uses.remove(u)
+		except StopIteration:
+			pass
 
 
 	def _negate(self, use):
