@@ -17,7 +17,11 @@ import argparse
 
 comment_re = re.compile("^\s*#.*", re.IGNORECASE)
 _verrule = r'([<|>]?=?)?'
-uses_re = re.compile("^\s*" + '(?P<catpkg>' + _verrule + _cp + ')' + " (?P<useflags>(.*))", re.IGNORECASE)
+if isinstance(_cp, dict):
+	cp = _cp['dots_disallowed_in_PN']
+else:
+	cp = _cp
+uses_re = re.compile("^\s*" + '(?P<catpkg>' + _verrule + cp + ')' + " (?P<useflags>(.*))", re.IGNORECASE)
 
 
 class PackageUSEEntry(object):
@@ -130,7 +134,7 @@ class PackageUSEHandler(object):
 					o.writelines(["%s\n" % x for x in pkg.comments])
 					o.write("%s %s\n" % (pkg.package, ' '.join(pkg.uses)))
 
-			o.writelines('\n'.join(self._garbage))
+			o.writelines('\n'.join(self._garbage) + '\n')
 			
 
 	def set_use(self, pkg, uses):
