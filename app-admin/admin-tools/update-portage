@@ -5,8 +5,9 @@ if [[ $UID != 0 ]]; then
 	exit 1
 fi
 
+/etc/init.d/squashed-portage stop;
 /usr/bin/get-squashed-portage;
-/etc/init.d/squashed-portage restart;
+/etc/init.d/squashed-portage start;
 emerge --metadata;
 #emerge --regen;
 layman -s ALL;
