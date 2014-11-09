@@ -2,7 +2,7 @@
 
 source /etc/make.conf
 
-NUMPROC=$(cat /proc/cpuinfo | grep processor | wc -l)
+NUMPROC=$(nproc)
 
 for overlay in ${PORTDIR_OVERLAY}; do
 	echo "Creating metadata-cache for ${overlay} ..."
