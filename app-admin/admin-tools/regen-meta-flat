@@ -1,6 +1,13 @@
 #!/bin/bash
 
-source /etc/make.conf
+if [[ -e /etc/portage/make.conf ]]; then
+	source /etc/portage/make.conf
+elif [[ -e /etc/make.conf ]]; then
+	source /etc/make.conf
+else
+	echo "Cannot find make.conf"
+	exit 1
+fi
 
 NUMPROC=$(nproc)
 

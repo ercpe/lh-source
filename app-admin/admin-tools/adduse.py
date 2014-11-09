@@ -221,7 +221,9 @@ def test_package(package):
 	# no exact match found. let the user choose
 	matches = [x for x in cp_all if pkg in x]
 
-	if len(matches) > 0:
+	if len(matches) == 1:
+		return matches[0]
+	elif len(matches) > 1:
 		print "Package name does not exist. Possible packages:"
 		print '\n'.join(["[%s] %s" % (i + 1, matches[i]) for i in xrange(0, len(matches))])
 		print ""
