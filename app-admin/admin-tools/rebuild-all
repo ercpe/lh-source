@@ -1,7 +1,5 @@
 #!/bin/bash
 
-source /usr/lib*/portage/bin/isolated-functions.sh
-
 PACKAGES="
 	sys-kernel/linux-headers
 	sys-libs/glibc
@@ -65,7 +63,7 @@ done
 [[ -f /var/log/rebuild.log ]] && mv /var/log/rebuild.log{,.old}
 
 if [[ ${_show_list} == "true" ]]; then
-	einfo "This will be emerged ..."
+	/lib64/rc/bin/einfo "This will be emerged ..."
 	emerge -p ${_2emerge} ${emerge_opts}
 fi
 
