@@ -194,6 +194,19 @@ class PackageUSEHandler(object):
 		return sorted(newuses)
 
 
+def sorted_best(pkg_query, a, b):
+	qcat, qname = pkg_query.split('/') if '/' in pkg_query else "", pkg_query
+	acat, aname = a.split('/')
+	adiff = len(aname.replace(qname, ''))
+	bcat, bname = b.split('/')
+	bdiff = len(bname.replace(qname, ''))
+
+	if adiff == bdiff:
+		return cmp(acat, bcat)
+
+	return cmp(adiff, bdiff)
+
+
 def test_package(package):
 	porttree = portage.db[portage.root]['porttree']
 	cp_all = porttree.dbapi.cp_all()
@@ -210,7 +223,7 @@ def test_package(package):
 				"^" + _verrule + r'([\w+][\w+.-]*/[\w\-]+)' + _vr, pkg
 				)
 			if not m:
-				raise Exception("Invlid cpv")
+				raise Exception("Invalid cpv")
 			pkg = m.group(2).strip("-")
 
 	if pkg in cp_all:  # exact match for cp
@@ -222,10 +235,15 @@ def test_package(package):
 	if len(matches) == 1:
 		return matches[0]
 	elif len(matches) > 1:
+		matches = sorted(matches, cmp=lambda x, y: sorted_best(pkg, x, y))
+
 		print "Package name does not exist. Possible packages:"
 		print '\n'.join(["[%s] %s" % (i + 1, matches[i]) for i in xrange(0, len(matches))])
 		print ""
-		pkg_num = raw_input("Package number [1-%s]: " % len(matches))
+
+		pkg_num = raw_input("Package number [1]: ")
+		if not pkg_num.strip():
+			pkg_num = "1"
 
 		if pkg_num.isdigit():
 			pkg_num = int(pkg_num)
@@ -255,10 +273,12 @@ if __name__ == '__main__':
 		parser.print_help()
 		sys.exit(1)
 
-	package = test_package(args.package[0])
-
-	if not package:
-		sys.exit(1)
+	try:
+		package = test_package(args.package[0])
+		if not package:
+			sys.exit(1)
+	except KeyboardInterrupt:
+		sys.exit(0)
 
 	print "Adding uses %s to package %s" % (', '.join(args.USE), package)
 
