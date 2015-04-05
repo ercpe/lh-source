@@ -57,9 +57,10 @@ class PackageUSEHandler(object):
 			prefix_root = portage.settings['EPREFIX']
 			if not prefix_root.strip():
 				prefix_root = "/"
-			self._package_use_file = os.path.join(
-				prefix_root, "etc/portage/package.use"
-				)
+			self._package_use_file = os.path.join(prefix_root, "etc/portage/package.use")
+
+			if os.path.isdir(self._package_use_file):
+				self._package_use_file = os.path.join(self._package_use_file, 'adduse')
 
 		self.read()
 
@@ -101,9 +102,7 @@ class PackageUSEHandler(object):
 
 				try:
 					# this test matches only duplicate strings
-					entry = (
-						x for x in self._entries if x.package == pkg
-						).next()
+					entry = (x for x in self._entries if x.package == pkg).next()
 					entry.comments.extend(comments)
 					entry.uses.extend(uses)
 				except StopIteration:
@@ -129,8 +128,7 @@ class PackageUSEHandler(object):
 					raise IOError("Could not create directory %s!" % directory)
 
 		if os.path.exists(self._package_use_file) and not os.access(self._package_use_file, os.W_OK):
-			raise IOError("You are not allowed to write to %s." %
-						  (self._package_use_file))
+			raise IOError("You are not allowed to write to %s." % (self._package_use_file))
 
 		# sort the entries (uses the __cmp__() function on the entries object)
 		self._entries = sorted(self._entries)
@@ -243,13 +241,9 @@ def test_package(package):
 
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(
-		description="Modify local USE flags for packages in /etc/portage/package.use"
-		)
-	parser.add_argument('package', type=str, nargs=1,
-						help="Package name: either as 'package' or 'category/package'")
-	parser.add_argument('USE', type=str, nargs=argparse.REMAINDER,
-						help="USE flags to change: +foo -bar -baz")
+	parser = argparse.ArgumentParser(description="Modify local USE flags for packages in /etc/portage/package.use")
+	parser.add_argument('package', type=str, nargs=1, help="Package name: either as 'package' or 'category/package'")
+	parser.add_argument('USE', type=str, nargs=argparse.REMAINDER, help="USE flags to change: +foo -bar -baz")
 	parser.add_argument('-f', '--file', type=str,
 						help="Alternate package.use file (defaults to the prefix-aware etc/portage/package.use)")
 	args = parser.parse_args()
