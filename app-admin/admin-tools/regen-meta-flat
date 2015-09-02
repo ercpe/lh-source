@@ -1,13 +1,6 @@
 #!/bin/bash
 
-if [[ -e /etc/portage/make.conf ]]; then
-	source /etc/portage/make.conf
-elif [[ -e /etc/make.conf ]]; then
-	source /etc/make.conf
-else
-	echo "Cannot find make.conf"
-	exit 1
-fi
+. /lib/gentoo/functions.sh
 
 if type -p nproc > /dev/null; then
 	NUMPROC=$(nproc)
@@ -15,9 +8,11 @@ else
 	NUMPROC=1
 fi
 
-for overlay in ${PORTDIR_OVERLAY}; do
-	echo "Creating metadata-cache for ${overlay} ..."
-	overlayname="$(head -1 ${overlay}/profiles/repo_name)"
-	egencache --jobs=${NUMPROC} --repo=${overlayname} --update
-	echo ""
+for overlay in $(portageq get_repos /); do
+	ebegin "Creating metadata-cache for ${overlay} ..."
+		egencache --jobs=${NUMPROC} --repo=${overlay} --update
+	eend $?
+	ebegin "Generating local USE desc"
+		egencache --jobs=${NUMPROC} --repo=${overlay} --update --update-use-local-desc
+	eend $?
 done
