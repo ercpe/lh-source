@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/bin/env python2
 
 # Script to edit portage resume list
 # Jordan Callicoat < MonkeeSage at gmail dot com >
