@@ -122,7 +122,7 @@ def kernel_ver():
 
 try:
     kv=kernel_ver()
-except (IOError, OSError), value:
+except (IOError, OSError) as value:
     if value.errno == errno.ENOENT:
         sys.stderr.write(
           "Couldn't access /proc\n"
@@ -252,12 +252,12 @@ for cmd in cmds:
     total+=cmds[cmd] #valid if PSS available
 
 if sys.version_info >= (2, 6):
-    sort_list = sorted(cmds.items(), key=lambda x:x[1])
+    sort_list = sorted(list(cmds.items()), key=lambda x:x[1])
 else:
-    sort_list = cmds.items()
+    sort_list = list(cmds.items())
     sort_list.sort(lambda x,y:cmp(x[1],y[1]))
 # list wrapping is redundant on <py3k, needed for >=pyk3 however
-sort_list=list(filter(lambda x:x[1],sort_list)) #get rid of zero sized processes
+sort_list=list([x for x in sort_list if x[1]]) #get rid of zero sized processes
 
 #The following matches "du -h" output
 #see also human.py

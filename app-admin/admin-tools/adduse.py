@@ -7,6 +7,8 @@
 Part of the app-admin/admin-tools package in the last-hope overlay (http://www.j-schmitz.net/projects/admin-tools/)
 '''
 
+from __future__ import print_function
+
 import os
 import shutil
 import sys
@@ -102,7 +104,7 @@ class PackageUSEHandler(object):
 
 				try:
 					# this test matches only duplicate strings
-					entry = (x for x in self._entries if x.package == pkg).next()
+					entry = next((x for x in self._entries if x.package == pkg))
 					entry.comments.extend(comments)
 					entry.uses.extend(uses)
 				except StopIteration:
@@ -123,7 +125,7 @@ class PackageUSEHandler(object):
 			directory = os.path.dirname(self._package_use_file)
 			if not os.path.exists(directory):
 				try:
-					os.makedirs(directory, 0755)
+					os.makedirs(directory, 0o755)
 				except:
 					raise IOError("Could not create directory %s!" % directory)
 
@@ -144,7 +146,7 @@ class PackageUSEHandler(object):
 
 	def set_use(self, pkg, uses):
 		try:
-			entry = (x for x in self._entries if x.package == pkg).next()
+			entry = next((x for x in self._entries if x.package == pkg))
 			entry.uses.extend(uses)
 		except StopIteration:
 			entry = PackageUSEEntry(pkg, uses)
@@ -160,7 +162,7 @@ class PackageUSEHandler(object):
 
 	def remove_use(self, pkg, uses):
 		try:
-			entry = (x for x in self._entries if x.package == pkg).next()
+			entry = next((x for x in self._entries if x.package == pkg))
 
 			l = uses
 			l.extend([self._negate(x) for x in uses])
@@ -183,13 +185,13 @@ class PackageUSEHandler(object):
 			neg_use = self._negate(current)
 
 			if neg_use in newuses:
-				print "Removing flip use: %s (was: %s)" % (neg_use, current)
+				print("Removing flip use: %s (was: %s)" % (neg_use, current))
 				newuses.remove(neg_use)
 
 			if not current in newuses:
 				newuses.append(current)
 			else:
-				print "Removing dup use: %s" % current
+				print("Removing dup use: %s" % current)
 
 		return sorted(newuses)
 
@@ -237,11 +239,16 @@ def test_package(package):
 	elif len(matches) > 1:
 		matches = sorted(matches, cmp=lambda x, y: sorted_best(pkg, x, y))
 
-		print "Package name does not exist. Possible packages:"
-		print '\n'.join(["[%s] %s" % (i + 1, matches[i]) for i in xrange(0, len(matches))])
-		print ""
+		print("Package name does not exist. Possible packages:")
+		print('\n'.join(["[%s] %s" % (i + 1, matches[i]) for i in range(0, len(matches))]))
+		print("")
 
-		pkg_num = raw_input("Package number [1]: ")
+		try:
+			input = raw_input
+		except NameError:
+			pass
+
+		pkg_num = input("Package number [1]: ")
 		if not pkg_num.strip():
 			pkg_num = "1"
 
@@ -252,7 +259,7 @@ def test_package(package):
 		else:
 			return None
 	else:
-		if raw_input("'%s' does not look like a valid package. Add it anyway? [y/N] " % pkg).lower() != "y":
+		if input("'%s' does not look like a valid package. Add it anyway? [y/N] " % pkg).lower() != "y":
 			return None
 		else:
 			return package
@@ -280,7 +287,7 @@ if __name__ == '__main__':
 	except KeyboardInterrupt:
 		sys.exit(0)
 
-	print "Adding uses %s to package %s" % (', '.join(args.USE), package)
+	print("Adding uses %s to package %s" % (', '.join(args.USE), package))
 
 	puh = PackageUSEHandler(args.file)
 	puh.set_use(package, args.USE)
