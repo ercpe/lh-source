@@ -38,11 +38,15 @@ class PackageUSEEntry(object):
 		self.package = package
 		self.uses = uses
 
-	def __cmp__(self, other):
+	def __lt__(self, other):
 		left = self.package.lstrip("<>=")
 		right = other.package.lstrip("<>=")
-		# this does not take account of the version numbers, but thats ok
-		return cmp(left, right)
+		return left < right
+
+	def __gt__(self, other):
+		left = self.package.lstrip("<>=")
+		right = other.package.lstrip("<>=")
+		return left > right
 
 
 class PackageUSEHandler(object):
